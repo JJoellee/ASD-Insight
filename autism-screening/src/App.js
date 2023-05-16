@@ -1,46 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Switch from "react-switch";
 import { Button, Form, Container, Row, Col, Card } from 'react-bootstrap';
 
+const ethnicityOptions = ['asian', 'black', 'hispanic', 'latino', 'middle eastern', 'others', 'pasifika', 'south asian', 'turkish', 'white-european'];
+const countryOptions = ['afghanistan', 'albania', /*...*/];
+const relationOptions = ['health care professional', 'others', 'parent', 'relative', 'self'];
+
 
 const questions = {
-  common: [
-      { name: 'age', label: 'Age', type: 'number', min: 0 },
-      {
-        name: 'gender',
-        label: 'Gender',
-        type: 'select',
-        options: ['Male', 'Female'],
-      },
-      { name: 'ethnicity', label: 'Ethnicity', type: 'text' },
-      {
-        name: 'born_with_jaundice',
-        label: 'Born with Jaundice',
-        type: 'select',
-        options: ['Yes', 'No'],
-      },
-      {
-        name: 'family_member_with_pdd',
-        label: 'Family Member with PDD',
-        type: 'select',
-        options: ['Yes', 'No'],
-      },
-      {
-        name: 'completed_by',
-        label: 'Who is completing the test',
-        type: 'select',
-        options: ['Parent', 'Self', 'Caregiver', 'Medical Staff', 'Clinician'],
-      },
-      { name: 'country_of_residence', label: 'Country of Residence', type: 'text' },
-      {
-        name: 'used_app_before',
-        label: 'Used the screening app before',
-        type: 'select',
-        options: ['Yes', 'No'],
-      },
-    ],
     'child': ['1. S/he often notices small sounds when others do not',
     '2. S/he usually concentrates more on the whole picture, rather than the small details',
     '3. In a social group, s/he can easily keep track of several different people’s conversations',
@@ -71,44 +40,104 @@ const questions = {
     '7. When I’m reading a story I find it difficult to work out the characters’ intentions     ',
     '8. I like to collect information about categories of things (e.g. types of car, types of bird, types of train, types of plant etc) ', 
     '9. I find it easy to work out what someone is thinking or feeling just by looking at their face ',
-    '10. I find it difficult to work out people’s intentions']
+    '10. I find it difficult to work out people’s intentions'],
+    common: [
+      { name: 'age', label: 'Age', type: 'number', min: 0 },
+      {
+        name: 'gender',
+        label: 'Gender',
+        type: 'select',
+        options: ['Male', 'Female'],
+      },
+      { name: 'ethnicity', label: 'Ethnicity', type: 'text' },
+      {
+        name: 'jaundice',
+        label: 'Born with Jaundice',
+        type: 'select',
+        options: ['Yes', 'No'],
+      },
+      {
+        name: 'autism',
+        label: 'Family Member with PDD',
+        type: 'select',
+        options: ['Yes', 'No'],
+      },
+      { name: 'country_of_res', label: 'Country of Residence', type: 'text' },
+      {
+        name: 'relation',
+        label: 'Who is completing the test',
+        type: 'select',
+        options: ['Parent', 'Self', 'Caregiver', 'Medical Staff', 'Clinician'],
+      },   
+      {
+        name: 'used_app_before',
+        label: 'Used the screening app before',
+        type: 'select',
+        options: ['Yes', 'No'],
+      },
+    ]
 };
 
-
+const defaultCommonAnswers = {
+  age: 0,
+  gender: 'Female',
+  ethnicity: 'latino',
+  jaundice: 'No',
+  autism: 'No',
+  relation: 'Self',
+  country_of_res: 'l\ebanon',
+  used_app_before: 'No',
+};
 
 
 const App = () => {
 
   const [ageGroup, setAgeGroup] = useState('child');
-  const [commonAnswers, setCommonAnswers] = useState({});
-  const [specificAnswers, setSpecificAnswers] = useState(Array(questions[ageGroup].length).fill(''));
+  const [ethnicity, setEthnicity] = useState('');
+  const [country, setCountry] = useState('');
+  const [relation, setRelation] = useState('');
+  const [commonAnswers, setCommonAnswers] = useState(defaultCommonAnswers);
+  const [specificAnswers, setSpecificAnswers] = useState(Array(questions[ageGroup].length).fill(0));
   const [result, setResult] = useState(null);
 
+  useEffect(() => {
+    setSpecificAnswers(Array(questions[ageGroup].length).fill(0));
+  }, [ageGroup]);
+
   const handleCommonChange = (e) => {
+    if (e.target.name === 'country_of_res') {
+      setCountry(e.target.value);
+    } else if (e.target.name === 'relation') {
+      setRelation(e.target.value);
+    } else {
       setCommonAnswers({
-          ...commonAnswers,
-          [e.target.name]: e.target.value
+        ...commonAnswers,
+        [e.target.name]: e.target.value
       });
+    }
   };
 
-const handleSpecificChange = (checked, index) => {
-  const newAnswers = [...specificAnswers];
-  newAnswers[index] = checked ? 'Yes' : 'No';
-  setSpecificAnswers(newAnswers);
-};
-
-  
+  const handleSpecificChange = (checked, index) => {
+    const newAnswers = [...specificAnswers];
+    newAnswers[index] = checked ? 1 : 0;
+    setSpecificAnswers(newAnswers);
+  };
 
   const handleSubmit = async () => {
-      try {
-          const response = await axios.post('/predict', { ageGroup, commonAnswers, specificAnswers });
-          setResult(response.data.prediction);
-      } catch (error) {
-          console.error(error);
-      }
+    try {
+      const dataToSend = {
+        ...specificAnswers.reduce((obj, answer, i) => ({ ...obj, [`A${i+1}_Score`]: answer }), {}),
+        ...commonAnswers,
+        ...ethnicityOptions.reduce((obj, eth) => ({ ...obj, [`ethnicity_${eth}`]: ethnicity === eth ? 1 : 0 }), {}),
+        ...countryOptions.reduce((obj, countryOption) => ({ ...obj, [`contry_of_res_${countryOption}`]: country === countryOption ? 1 : 0 }), {}),
+        ...relationOptions.reduce((obj, relationOption) => ({ ...obj, [`relation_${relationOption}`]: relation === relationOption ? 1 : 0 }), {})
+      };
+      const response = await axios.post('http://localhost:5555/predict', dataToSend);
+      setResult(response.data.prediction);
+    } catch (error) {
+      console.error(error);
+    }
   };
-
-
 
   return (
     <Container className="mt-5">
@@ -166,7 +195,7 @@ const handleSpecificChange = (checked, index) => {
               
                 <Switch
                     onChange={(checked) => handleSpecificChange(checked, index)}
-                    checked={specificAnswers[index] === 'Yes'}
+                    checked={specificAnswers[index] === 1}
                     onColor="#86d3ff"
                     onHandleColor="#2693e6"
                     handleDiameter={15}
