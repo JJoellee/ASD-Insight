@@ -3,9 +3,10 @@ import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Switch from "react-switch";
 import { Button, Form, Container, Row, Col, Card } from 'react-bootstrap';
+import Footer from './Footer';
 
 const ethnicityOptions = ['asian', 'black', 'hispanic', 'latino', 'middle eastern', 'others', 'pasifika', 'south asian', 'turkish', 'white-european'];
-const countryOptions = ['afghanistan', 'albania', /*...*/];
+const countryOptions = ['afghanistan', 'albania', 'americansamoa', 'angola', 'anguilla', 'argentina', 'armenia', 'aruba', 'australia', 'austria', 'azerbaijan', 'bahamas', 'bahrain', 'bangladesh', 'belgium', 'bhutan', 'bolivia', 'brazil', 'bulgaria', 'burundi', 'canada', 'chile', 'china', 'comoros', 'costa rica', 'croatia', 'cyprus', 'czech republic', 'ecuador', 'egypt', 'ethiopia', 'europe', 'finland', 'france', 'georgia', 'germany', 'ghana', 'greenland', 'hong kong', 'iceland', 'india', 'indonesia', 'iran', 'iraq', 'ireland', 'isle of man', 'italy', 'japan', 'jordan', 'kazakhstan', 'kuwait', 'latvia', 'lebanon', 'libya', 'malaysia', 'malta', 'mexico', 'nepal', 'netherlands', 'new zealand', 'nicaragua', 'niger', 'nigeria', 'norway', 'oman', 'pakistan', 'philippines', 'portugal', 'qatar', 'romania', 'russia', 'saudi arabia', 'serbia', 'sierra leone', 'south africa', 'south korea', 'spain', 'sri lanka', 'sweden', 'syria', 'tonga', 'turkey', 'u.s. outlying islands', 'ukraine', 'united arab emirates', 'united kingdom', 'united states', 'uruguay', 'viet nam'];
 const relationOptions = ['health care professional', 'others', 'parent', 'relative', 'self'];
 
 
@@ -49,7 +50,12 @@ const questions = {
         type: 'select',
         options: ['Male', 'Female'],
       },
-      { name: 'ethnicity', label: 'Ethnicity', type: 'text' },
+      {
+        name: 'ethnicity',
+        label: 'Ethnicity',
+        type: 'select',
+        options: ethnicityOptions,
+      },
       {
         name: 'jaundice',
         label: 'Born with Jaundice',
@@ -62,7 +68,12 @@ const questions = {
         type: 'select',
         options: ['Yes', 'No'],
       },
-      { name: 'country_of_res', label: 'Country of Residence', type: 'text' },
+      {
+        name: 'country_of_res',
+        label: 'Country of Residence',
+        type: 'select',
+        options: countryOptions,
+      },
       {
         name: 'relation',
         label: 'Who is completing the test',
@@ -81,11 +92,11 @@ const questions = {
 const defaultCommonAnswers = {
   age: 0,
   gender: 'Female',
-  ethnicity: 'latino',
+  ethnicity: 'pasifica',
   jaundice: 'No',
   autism: 'No',
   relation: 'Self',
-  country_of_res: 'l\ebanon',
+  country_of_res: 'lebanon',
   used_app_before: 'No',
 };
 
@@ -109,6 +120,8 @@ const App = () => {
       setCountry(e.target.value);
     } else if (e.target.name === 'relation') {
       setRelation(e.target.value);
+    } else if(e.target.name === 'ethnicity'){
+      setEthnicity(e.target.value);
     } else {
       setCommonAnswers({
         ...commonAnswers,
@@ -133,17 +146,23 @@ const App = () => {
         ...relationOptions.reduce((obj, relationOption) => ({ ...obj, [`relation_${relationOption}`]: relation === relationOption ? 1 : 0 }), {})
       };
       const response = await axios.post('http://localhost:5555/predict', dataToSend);
-      setResult(response.data.prediction);
+      if(response.data.prediction===0){
+        setResult("Based on the information provided, a referral for an autism assessment may not be necessary. However, this tool should not replace professional medical advice. If you have concerns about autism, we strongly recommend speaking with a healthcare professional. Only a healthcare professional can provide a definitive diagnosis and advice.");
+      }
+      else{
+        setResult("Based on the information provided, it might be beneficial to seek a professional assessment for autism. This tool is not a substitute for professional advice and cannot provide a definitive diagnosis. Please consult with a healthcare professional who can conduct a full evaluation and provide a more definitive guidance.");
+      }
     } catch (error) {
       console.error(error);
     }
   };
 
   return (
+    <div>
     <Container className="mt-5">
     <Card className="shadow-lg p-3 mb-5 bg-white rounded">
       <Card.Body>
-        <Card.Title className="mb-4 text-center text-uppercase font-weight-bold">Autism Screening</Card.Title>
+        <Card.Title className="mb-4 text-center font-weight-bold" style={{ fontSize: '26px' }}>Autism Spectrum Quotient (AQ-10) Analysis Using Artificial Intelligence</Card.Title>
 
 
           <Form>
@@ -214,11 +233,13 @@ const App = () => {
   <Button variant="primary" type="button" onClick={handleSubmit} className="w-10">Submit</Button>
 </div>
 
-          {result !== null && <p className="mt-3 text-center font-weight-bold">Prediction: {result}</p>}
+          {result !== null && <p className="mt-3 text-center font-weight-bold">{result}</p>}
         </Form>
       </Card.Body>
     </Card>
   </Container>
+<Footer/>
+  </div>
   );
 };
 
