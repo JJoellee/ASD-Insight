@@ -23,6 +23,7 @@ Your app should now be running on [localhost:3000](http://localhost:3000/).
 * Run the Back-end from root directory:
 ```
 cd Back-end
+pip install -r requirements. txt
 python app.py
 ```
 
