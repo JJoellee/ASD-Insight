@@ -12,6 +12,7 @@ ASD-Insight is an innovative web application designed to enhance autism screenin
 * Clone the repository:
 ```
 git clone https://github.com/JJoellee/ASD-Insight.git
+cd ASD-Insight
 ```
 * Run the Front-end from root directory: 
 ```
